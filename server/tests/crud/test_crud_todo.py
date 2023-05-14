@@ -2,19 +2,16 @@ import pytest
 from fastapi import status
 from crud import crud_todo as crud 
 
-todo_list_id:    int  = 0
+todo_list_id: int  = 0
 
 def test_todo_create_list():
     global todo_list_id
-
     data = crud.todo.create_list('test-list')
     todo_list_id = data
-
     assert data == todo_list_id
 
 def test_todo_get_list():
     data = crud.todo.get_list(todo_list_id)
-
     assert data['todo_id'] == todo_list_id
     assert data['name']    == 'test-list'
     assert data['tasks']   == None
@@ -28,28 +25,24 @@ def test_todo_modify_list_name():
     
 def test_todo_get_tasks_no_tasks():
     data = crud.todo.get_tasks(todo_list_id)
-
     assert data['tasks']   == None 
 
 def test_todo_add_task():
     data = crud.todo.add_task(todo_list_id, 'test-task1')
-
     assert data == status.HTTP_204_NO_CONTENT
 
 def test_todo_add_second_task():
     data = crud.todo.add_task(todo_list_id, 'test-task2')
-    
     assert data == status.HTTP_204_NO_CONTENT
 
 def test_todo_get_tasks():
     data = crud.todo.get_tasks(todo_list_id)
-
     assert data['tasks'] == {'test-task1': False, 'test-task2': False}
 
 def test_delete_task():
     data = crud.todo.delete_task(todo_list_id, 'test-task2')
     assert data == status.HTTP_204_NO_CONTENT
-    
+
     data = crud.todo.get_tasks(todo_list_id)
     assert data['tasks'] == {'test-task1': False}
 
