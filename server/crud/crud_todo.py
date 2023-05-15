@@ -1,79 +1,83 @@
 from fastapi import HTTPException, status
 
 from sb.sb_init import sb_client
+from schemas.todo_schemas import CreateToDo, ToDoId
 
 class CRUDToDo():
-    __Table = "ToDo"
+    __Table = 'ToDo'
+    __Id_column = 'todo_id'
+    __Name_column = 'todo_name'
+    __Tasks_column = 'todo_tasks'
 
-    def get_list(self, list_id: int):
+    def get(self, todo_id: int):
         try:
-            data = sb_client.table(self.__Table).select("*").eq("todo_id", list_id).execute()
+            data = sb_client.table(self.__Table).select('*').eq(self.__Id_column, todo_id).execute()
             return data.data[0]
         except:
             raise HTTPException(detail = 'ToDo list not found', status_code = status.HTTP_404_NOT_FOUND)
 
-    def create_list(self, list_name: str) -> int:
+    def create(self, create_data: str) -> int:
         try:
-            data = sb_client.table(self.__Table).insert({"name": list_name}).execute()
+            data = sb_client.table(self.__Table).insert({self.__Name_column: create_data}).execute()
             return data.data[0]['todo_id']
         except:
             raise HTTPException(detail = 'Error while creating ToDo list', status_code = status.HTTP_404_NOT_FOUND)
     
-    def delete_list(self, list_id: int):
+    def delete(self, todo_id: int):
         try:
-            sb_client.table(self.__Table).delete().eq("todo_id", list_id).execute()
+            sb_client.table(self.__Table).delete().eq(self.__Id_column, todo_id).execute()
             return status.HTTP_204_NO_CONTENT
         except:
             raise HTTPException(detail = 'ToDo list not found', status_code = status.HTTP_404_NOT_FOUND)
 
-    def modify_list_name(self, list_id: int, new_list_name: str):
+    def modify_name(self, todo_id: int, new_list_name: str):
         try:
-            sb_client.table(self.__Table).update({"name": new_list_name}).eq("todo_id", list_id).execute()
+            sb_client.table(self.__Table).update({self.__Name_column: new_list_name}).eq(self.__Id_column, todo_id).execute()
             return status.HTTP_204_NO_CONTENT
         except:
             raise HTTPException(detail = 'ToDo list not found', status_code = status.HTTP_404_NOT_FOUND)
 
-    def get_tasks(self, list_id: int) -> dict:
+    def get_tasks(self, todo_id: int) -> dict:
         try:
-            data = sb_client.table(self.__Table).select("tasks").eq("todo_id", list_id).execute()
+            data = sb_client.table(self.__Table).select(self.__Tasks_column).eq(self.__Id_column, todo_id).execute()
             return data.data[0]
         except:
             raise HTTPException(detail = 'ToDo list not found', status_code = status.HTTP_404_NOT_FOUND)
 
-    def add_task(self, list_id: int, task_name: str):
-        prev_task_list = self.get_tasks(list_id).get('tasks', {}) or {}
+    def add_task(self, todo_id: int, task_name: str):
+        prev_task_list = self.get_tasks(todo_id).get(self.__Tasks_column, {}) or {}
         new_task_list = {**prev_task_list, task_name: False}
         try:
-            sb_client.table(self.__Table).update({"tasks": new_task_list}).eq("todo_id", list_id).execute()
+            sb_client.table(self.__Table).update({self.__Tasks_column: new_task_list}).eq(self.__Id_column, todo_id).execute()
             return status.HTTP_204_NO_CONTENT
         except:
             raise HTTPException(detail = 'Error while adding task', status_code = status.HTTP_404_NOT_FOUND)
     
-    def delete_task(self, list_id: int, task_name: str) -> bool | Exception:
-        task_list = self.get_tasks(list_id).get('tasks', {}) or {}
+    def delete_task(self, todo_id: int, task_name: str) -> bool | Exception:
+        task_list = self.get_tasks(todo_id).get(self.__Tasks_column, {}) or {}
         try:
             del task_list[task_name]
-            sb_client.table(self.__Table).update({"tasks": task_list}).eq("todo_id", list_id).execute()
+            sb_client.table(self.__Table).update({self.__Tasks_column: task_list}).eq(self.__Id_column, todo_id).execute()
             return status.HTTP_204_NO_CONTENT
         except:
             raise HTTPException(detail = 'Task not found', status_code = status.HTTP_404_NOT_FOUND)
 
-    def modify_task_name(self, list_id: int, task_name: str, new_task_name: str):
-        task_list = self.get_tasks(list_id).get('tasks', {}) or {}
+    def modify_task_name(self, todo_id: int, task_name: str, new_task_name: str):
+        task_list = self.get_tasks(todo_id).get(self.__Tasks_column, {}) or {}
         try:
             task_list[new_task_name] = task_list.pop(task_name) 
-            sb_client.table(self.__Table).update({"tasks": task_list}).eq("todo_id", list_id).execute()
+            sb_client.table(self.__Table).update({self.__Tasks_column: task_list}).eq(self.__Id_column, todo_id).execute()
             return status.HTTP_204_NO_CONTENT
         except KeyError:
             raise HTTPException(detail = 'Task not found', status_code = status.HTTP_404_NOT_FOUND)
         except:
             raise HTTPException(detail = 'Error while changing task name', status_code = status.HTTP_404_NOT_FOUND)
 
-    def set_task_status(self, list_id: int, task_name: str, set_status: bool):
-        task_list = self.get_tasks(list_id).get('tasks', {}) or {}
+    def set_task_status(self, todo_id: int, task_name: str, set_status: bool):
+        task_list = self.get_tasks(todo_id).get(self.__Tasks_column, {}) or {}
         try:
             task_list[task_name] = set_status
-            sb_client.table(self.__Table).update({"tasks": task_list}).eq("todo_id", list_id).execute()
+            sb_client.table(self.__Table).update({self.__Tasks_column: task_list}).eq(self.__Id_column, todo_id).execute()
             return status.HTTP_204_NO_CONTENT
         except KeyError:
             raise HTTPException(detail = 'Task not found', status_code = status.HTTP_404_NOT_FOUND)
